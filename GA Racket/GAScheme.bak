@@ -1,0 +1,9 @@
+#lang racket
+
+(define (poblacionInicial numeroPob cont)
+  (cond
+    ((= numeroPob cont) '())
+    (else (generarJugador ))
+        
+        )
+  )
