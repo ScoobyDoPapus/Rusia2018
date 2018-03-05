@@ -149,6 +149,41 @@
 (define (getTeam t gd) (get gd t))
 (define (getPosition p t gd) (get (getTeam t gd) p))
 (define (getPlayer n p t gd) (get (getPosition p t gd) n))
+
+;--------------------------------------------------------------------------------------------------------------------------------------------
+
+(define (route pos_X pos_Y players_List)(
+                                                cond(
+                                                     (null? players_List) 0)
+                                                    (else (route_aux pos_X pos_Y players_List 0 0 0 0))
+                                                    )
+  )
+;;Function that looks for the closer player so the player with the ball can throw it to the better way.
+;-------------------------------------------------------------------------------------------------------------------------------------------
+
+(define (route_aux x y list final_x final_y type player)(
+                                             cond(
+                                                  (null? list) final_x final_y)
+                                                 ((equal? player (length(getPosition type 0 list)))
+                                                  (route_aux x y (cdr(car list)) final_x final_y (+ type 1) 0 ))
+                                                 
+                                                 ((<= (abs(- x (get(getPlayer(player type 0 list) 0)))) final_x)
+                                                  (route_aux x y (cdr list) (abs(- x (get(getPlayer(player type 0 list) 0)))) final_y type (+ player 1)))
+                                                 ((<= (abs(- y (get(getPlayer(player type 0 list) 1)))) final_y)
+                                                 (route_aux x y (cdr list) final_x (abs(- y (get(getPlayer(player type 0 list) 1)))) type (+ player 1)))
+                                                 (else (route_aux x y (cdr(list)) final_x final_y type (+ player 1)))
+                                                 )
+  )
+
+;;Function that controls if one of the two teams win so the game will end.
+;;------------------------------------------------------------------------------------------------------------------------------------------
+
+(define(end_game c1 c2)(
+                        cond((or (equal? c1 3) (equal? c2 3))
+                             ((clear-viewport window))
+                             (drawField))
+                            (else "Game is not over"))
+  )
 ;--------------------------------------------------------------------------------------------------------------------------------------------
 ;Depuration
 (WCR2018 '(0 0 0) '(0 0 0) 15)
