@@ -19,7 +19,7 @@
 ;--------------------------------------------------------------------------------------------------------------------------------------------
   ;Draw the soccer field.
   (define (drawField)
-  ;;Main Window
+  ;;Main Window 
   ((draw-solid-rectangle window) (make-posn 0 0) 1200 512 "black")
   ;;Soccer field background
   ((draw-solid-rectangle window) (make-posn 100 50) 800 400 "white")
@@ -43,6 +43,8 @@
   )
 ;;Fuction that draws the score from the two teams
 (define (drawCounter home visitors)
+((draw-solid-rectangle window) (make-posn 1130 135) 20 20 "white")
+((draw-solid-rectangle window) (make-posn 965 135) 20 20 "white")
 ((draw-string window) (make-posn 1135 150) (~a visitors) "blue") 
 ((draw-string window) (make-posn 970 150) (~a home) "red")
 )
@@ -56,18 +58,32 @@
     ((draw-solid-ellipse window)(make-posn (getRPX (moveX x1 x2 t)) (getRPY (moveY x1 y1 x2 y2 t))) 16 16 "blue")
     ((draw-string window) (make-posn (getRPX (+ (moveX x1 x2 t) 5)) (getRPY (+ (moveY x1 y1 x2 y2 t) 10))) (number->string n) "white"))
 ))
-;Draw a ball on screen
-(define (drawBall x y b_data)
-   ((draw-solid-ellipse window) (make-posn (getRPX (getXB x (get b_data 0) (get b_data 2) (get b_data 5))) (getRPY  (getFB x y (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)))) 10 10 "black")
+;Draw a ball on screen, the ball data list structure is [X Y Speed directionX directionY timeX timeY counter1 counter2]
+(define (drawBall b_data)
+   ((draw-solid-ellipse window) (make-posn (getRPX (getXB (get b_data 9) (get b_data 0) (get b_data 2) (get b_data 5))) (getRPY  (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)))) 10 10 "black")
    (cond
+      ((and
+       (> (+ (getXB (get b_data 9) (get b_data 0) (get b_data 2) (get b_data 5)) 10) 795)
+       (> (+ (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 10) 100)
+       (< (+ (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 10) 300))
+       (drawCounter (+ (get b_data 7) 1) (get b_data 8))
+       (replace (replace (replace b_data (* -1 (get b_data 3)) 3) (+ (get b_data 5) (* -1 (get b_data 3))) 5) (+ (get b_data 7) 1) 7)
+     )
+     ((and
+       (< (getXB (get b_data 9) (get b_data 0) (get b_data 2) (get b_data 5)) 0)
+       (> (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 100)
+       (< (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 300))
+       (drawCounter  (get b_data 7)(+ (get b_data 8) 1))
+       (replace (replace (replace b_data (* -1 (get b_data 3)) 3) (+ (get b_data 5) (* -1 (get b_data 3))) 5) (+ (get b_data 8) 1) 8)
+     )
      ((or
-       (> (+ (getXB x (get b_data 0) (get b_data 2) (get b_data 5)) 10) 795)
-       (< (getXB x (get b_data 0) (get b_data 2) (get b_data 5)) 0))
+       (> (+ (getXB (get b_data 9) (get b_data 0) (get b_data 2) (get b_data 5)) 10) 795)
+       (< (getXB (get b_data 9) (get b_data 0) (get b_data 2) (get b_data 5)) 0))
        (replace (replace b_data (* -1 (get b_data 3)) 3) (+ (get b_data 5) (* -1 (get b_data 3))) 5)
      )
      ((or
-       (> (+ (getFB x y (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 10) 395)
-       (< (getFB x y (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 0))
+       (> (+ (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 10) 395)
+       (< (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 0))
        (replace (replace b_data (* -1 (get b_data 4)) 4) (+ (get b_data 6) (* -1 (get b_data 4))) 6)
      )
      (else (replace (replace b_data (+ (get b_data 5) (get b_data 3)) 5) (+ (get b_data 6) (get b_data 4)) 6))
@@ -130,6 +146,35 @@
     ((equal? t 2) time)
     ((equal? p 4) (updatePlayers n_player 0 0 (+ t 1) p_old_data p_data abs_time time))
     ((equal? n (length (getPosition p t p_data))) (updatePlayers n_player 0 (+ p 1) t p_old_data p_data abs_time time))
+    ((collide 20 20
+     (moveX (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_old_data) 0) t)
+     (moveY (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) t)
+     (getXB (get (get p_data 2) 9) (get (get p_data 2) 0) (get (get p_data 2) 2) (get (get p_data 2) 5))
+     (getFB (get (get p_data 2) 9) (get (get p_data 2) 10) (get (get p_data 2) 0) (get (get p_data 2) 1) (get (get p_data 2) 2) (get (get p_data 2) 6)))
+     (display "si sale y no chocó se mamut") 
+     (updatePlayers n_player n p t p_old_data
+        (replace (list
+        (get (route
+         (moveX (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_old_data) 0) t)
+         (moveY (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) t)
+         (getTeam t p_data)
+        )0)
+        (get (route
+         (moveX (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_old_data) 0) t)
+         (moveY (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) t)
+         (getTeam t p_data)
+        )1)
+        (get (get p_data 2) 2)
+        (get (get p_data 2) 3)
+        (get (get p_data 2) 4)
+         0
+         0
+        (get (get p_data 2) 7)
+        (get (get p_data 2) 8)
+        (moveX (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_old_data) 0) t)
+        (moveY (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) t)
+        )2)
+     abs_time time))
     ((integer? (/ time 15)) (drawPlayer
      (get (getPlayer n p t p_old_data) 0)
      (get (getPlayer n p t p_old_data) 1)
@@ -143,11 +188,11 @@
 ;Updates every movement. This function returns the time when the movement of every element is finished
 (define (update p_old_data p_data t_abs t)
   (sleep (/ 1 60))
-  (drawCounter 0 0)
+  (drawCounter (get (get p_data 2) 7) (get (get p_data 2) 8))
   (displayTimeInSeconds 1000 60 t_abs)
   (cond
     ((stop? 0 0 0 p_old_data p_data t) p_data)
-    (else (update p_old_data (replace p_data (drawBall 100 300 (get p_data 2)) 2) (+ t_abs 1) (+ (updatePlayers 1 0 0 0 p_old_data p_data t_abs t) 1)))
+    (else (update p_old_data (replace p_data (drawBall (get p_data 2)) 2) (+ t_abs 1) (+ (updatePlayers 1 0 0 0 p_old_data p_data t_abs t) 1)))
   )
 )
 ;If every movement stops, this function returns #t else #f 
@@ -163,11 +208,11 @@
 ;Replace gameData per Genetic Algorithm. DEPURATION <---------------------------
 (define (repaint F1 F2 p_old_data p_data t_abs t gi gf)
   (sleep (/ 1 60))
-  (drawCounter 0 0)
+  (drawCounter (get (get p_data 2) 7) (get (get p_data 2) 8))
   (drawField)
   (displayTimeInSeconds 1000 60 t_abs)
   (cond 
-    ((< gi gf) (display gi) (newline) (repaint F1 F2 (gameData F1 F2 '(200 400 1 1 1 0 0)) (update p_old_data p_data t_abs t) 0 0 (+ gi 1) gf))
+    ((< gi gf) (display gi) (newline) (repaint F1 F2 (gameData F1 F2 '(400 180 1 1 1 0 0 0 0 395 170)) (update p_old_data p_data t_abs t) 0 0 (+ gi 1) gf))
     (else "Game over")
   )
 ) 
@@ -178,7 +223,54 @@
 ;Replace gameData. Depuracion <---------------------------
 (define (WCR2018 F1 F2 g)
   (drawField)
-  (repaint F1 F2 (gameData F1 F2 '(200 400 1 1 1 0 0)) (gameData F1 F2 '(200 400 1 1 1 0 0)) 0 0 0 g)
+  (repaint F1 F2 (gameData F1 F2 '(400 180 1 1 1 0 0 0 0 395 170)) (gameData F1 F2 '(400 180 1 1 1 0 0 0 0 395 170)) 0 0 0 g)
 )
+;--------------------------------------------------------------------------------------------------------------------------------------------
+
+(define (route pos_X pos_Y players_List)(
+                                         cond(
+                                              (null? players_List) 0)
+                                             (else (route_aux pos_X pos_Y players_List 0 0 0 0))
+                                             )
+)
+;;Function that looks for the closer player so the player with the ball can throw it to the better way.
+;-------------------------------------------------------------------------------------------------------------------------------------------
+
+(define (route_aux x y list final_x final_y type player)(
+                                          cond(
+                                                  (null? list) (list final_x final_y))
+                                                 ((equal? player (length(getPosition type 0 list)))
+                                                  (route_aux x y (cdr (car list)) final_x final_y (+ type 1) 0 ))
+                                                 ((<= (abs (- x (get (getPlayer player type 0 list) 0))) final_x)
+                                                  (route_aux x y (cdr list) (abs(- x (get (getPlayer player type 0 list) 0))) final_y type (+ player 1)))
+                                                 ((<= (abs (- y (get (getPlayer player type 0 list) 1))) final_y)
+                                                  (route_aux x y (cdr list) final_x (abs(- y (get (getPlayer player type 0 list) 1))) type (+ player 1)))
+                                                 (else (route_aux x y (cdr(list)) final_x final_y type (+ player 1)))
+                                                 )
+)
+;;Function that controls if one of the two teams win so the game will end.
+;;------------------------------------------------------------------------------------------------------------------------------------------
+(define(end_game c1 c2)(
+                        cond((or (equal? c1 3) (equal? c2 3))
+                             ((clear-viewport window))
+                             (drawField))
+                            (else "Game is not over"))
+)
+;--------------------------------------------------------------------------------------------------------------------------------------------
+;Function that calculates the distance between two points.
+(define (distanceBetweenPoints x1 y1 x2 y2)
+   (sqrt (+ (expt (abs (- x2 x1)) 2) (expt (abs (- y2 y1)) 2))))
+;--------------------------------------------------------------------------------------------------------
+;Function that detects if there was a collision between any player and the ball.
+;--------------------------------------------------------------------------------------------------------
+; pPr: player radius.
+; pBr: ball radius.
+; x1: player position in X.
+; y1: player position in Y.
+; x2: ball position in X.
+; y2: ball position in Y.
+;--------------------------------------------------------------------------------------------------------
+(define (collide pPr pBr x1 y1 x2 y2)
+  (> (+ pPr pBr) (distanceBetweenPoints x1 y1 x2 y2)))
 ;Depuration
-(WCR2018 '(0 0 0) '(0 0 0) 10)
+(WCR2018 '(1 0 0) '(0 1 0) 100)
