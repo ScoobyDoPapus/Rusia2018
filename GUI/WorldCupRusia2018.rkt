@@ -18,8 +18,8 @@
 ;Drawing fuctions
 ;--------------------------------------------------------------------------------------------------------------------------------------------
   ;Draw the soccer field.
-  (define (drawField)
-  ;;Main Window 
+  (define (drawField) 
+  ;;Main Window
   ((draw-solid-rectangle window) (make-posn 0 0) 1200 512 "black")
   ;;Soccer field background
   ((draw-solid-rectangle window) (make-posn 100 50) 800 400 "white")
@@ -117,7 +117,9 @@
 ;Dimentions X and Y movement functions. They use the previos methods and update them with a time variable.
 (define (moveY x1 y1 x2 y2 t)
   (cond
-    ((<= (* (getDirection x1 x2) (- y2 (getF x1 y1 x2 y2 t))) 0) y2)
+    ((zero? y1 y2) y1)
+    ((and (< x1 x2)(< (- x2 (getX x1 x2 t)) 0)) y2)
+    ((and (< x2 x1)(< (- (* (getX x1 x2 t) -1) x2) 0)) y2)
     (else (getF x1 y1 x2 y2 t)) 
 ))
 ;It returns a one dimension movement in a given "t" time.
@@ -146,22 +148,22 @@
     ((equal? t 2) time)
     ((equal? p 4) (updatePlayers n_player 0 0 (+ t 1) p_old_data p_data abs_time time))
     ((equal? n (length (getPosition p t p_data))) (updatePlayers n_player 0 (+ p 1) t p_old_data p_data abs_time time))
-    ((collide 20 20
-     (moveX (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_old_data) 0) t)
-     (moveY (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) t)
+    ((collide 8 5
+     (moveX (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_data) 0) time)
+     (moveY (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) time)
      (getXB (get (get p_data 2) 9) (get (get p_data 2) 0) (get (get p_data 2) 2) (get (get p_data 2) 5))
      (getFB (get (get p_data 2) 9) (get (get p_data 2) 10) (get (get p_data 2) 0) (get (get p_data 2) 1) (get (get p_data 2) 2) (get (get p_data 2) 6)))
      (display "si sale y no chocó se mamut") 
      (updatePlayers n_player n p t p_old_data
         (replace (list
         (get (route
-         (moveX (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_old_data) 0) t)
-         (moveY (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) t)
+         (moveX (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_data) 0) time)
+         (moveY (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) time)
          (getTeam t p_data)
         )0)
         (get (route
-         (moveX (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_old_data) 0) t)
-         (moveY (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) t)
+         (moveX (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_data) 0) time)
+         (moveY (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) time)
          (getTeam t p_data)
         )1)
         (get (get p_data 2) 2)
@@ -171,11 +173,11 @@
          0
         (get (get p_data 2) 7)
         (get (get p_data 2) 8)
-        (moveX (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_old_data) 0) t)
-        (moveY (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) t)
+        (moveX (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_data) 0) time)
+        (moveY (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) time)
         )2)
      abs_time time))
-    ((integer? (/ time 15)) (drawPlayer
+    ((integer? (/ time 10)) (drawPlayer
      (get (getPlayer n p t p_old_data) 0)
      (get (getPlayer n p t p_old_data) 1)
      (get (getPlayer n p t p_data) 0)
@@ -209,10 +211,10 @@
 (define (repaint F1 F2 p_old_data p_data t_abs t gi gf)
   (sleep (/ 1 60))
   (drawCounter (get (get p_data 2) 7) (get (get p_data 2) 8))
-  (drawField)
+  ;(drawField)
   (displayTimeInSeconds 1000 60 t_abs)
   (cond 
-    ((< gi gf) (display gi) (newline) (repaint F1 F2 (gameData F1 F2 '(400 180 1 1 1 0 0 0 0 395 170)) (update p_old_data p_data t_abs t) 0 0 (+ gi 1) gf))
+    ((< gi gf) (display gi) (newline) (repaint F1 F2 p_data (update p_data (gameData F1 F2 (get p_data 2)) t_abs t) 0 0 (+ gi 1) gf))
     (else "Game over")
   )
 ) 
@@ -273,4 +275,4 @@
 (define (collide pPr pBr x1 y1 x2 y2)
   (> (+ pPr pBr) (distanceBetweenPoints x1 y1 x2 y2)))
 ;Depuration
-(WCR2018 '(1 0 0) '(0 1 0) 100)
+(WCR2018 '(0 0 0) '(0 0 0) 100)
