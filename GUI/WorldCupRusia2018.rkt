@@ -232,7 +232,7 @@
 (define (route pos_X pos_Y players_List)(
                                          cond(
                                              (null? players_List) 0)
-                                             (else (route_aux pos_X pos_Y players_List 0 0 0 0))
+                                             (else (route_aux pos_X pos_Y players_List 2000 2000 0 0))
                                              )
 )
 ;;Function that looks for the closer player so the player with the ball can throw it to the better way.
@@ -241,14 +241,23 @@
 (define (route_aux x y l final_x final_y type player) 
   (cond
                                                  ((null? l) (display final_x) (display " ") (display final_y) (newline) (list final_x final_y))
+                                                 
                                                  ((and (equal? x (get (get (car l) player) 0)) (equal? y (get (get (car l) player) 1)))
+                                                  
                                                   (route_aux x y l final_x final_y type (+ player 1)))
+                                                 
                                                  ((equal? player (length(car l)))
+                                                  
                                                   (route_aux x y (cdr l) final_x final_y (+ type 1) 0 ))
+                                                 
                                                  ((<= (abs (- x (get (get (car l) player) 0))) final_x)
-                                                  (route_aux x y l (abs (- x (get (get (car l) player) 0))) final_y type (+ player 1)))
-                                                 ((<= (abs (- y (get (get (car l) player) 1))) final_y) 
-                                                  (route_aux x y l final_x (abs (- y (get (get (car l) player) 1))) type (+ player 1)))
+                                                  
+                                                  (route_aux x y l (get (get (car l) player) 0) (get (get (car l) player) 1) type (+ player 1)))
+                                                 
+                                                ;; ((<= (abs (- y (get (get (car l) player) 1))) final_y)
+                                                  
+                                                 ;; (route_aux x y l final_x (get (get (car l) player) 1) type (+ player 1)))
+                                                 
                                                  (else (route_aux x y l final_x final_y type (+ player 1)))
                                                  )
 )
