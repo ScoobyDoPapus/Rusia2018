@@ -58,7 +58,7 @@
     ((draw-solid-ellipse window)(make-posn (getRPX (moveX x1 x2 t)) (getRPY (moveY x1 y1 x2 y2 t))) 16 16 "blue")
     ((draw-string window) (make-posn (getRPX (+ (moveX x1 x2 t) 5)) (getRPY (+ (moveY x1 y1 x2 y2 t) 10))) (number->string n) "white"))
 ))
-;Draw a ball on screen, the ball data list structure is [X Y Speed directionX directionY timeX timeY counter1 counter2]
+;Draw a ball on screen, the ball data list structure is [X Y Speed directionX directionY timeX timeY counter1 counter2 collisioned? n_player_collisioned]
 (define (drawBall b_data)
    ((draw-solid-ellipse window) (make-posn (getRPX (getXB (get b_data 9) (get b_data 0) (get b_data 2) (get b_data 5))) (getRPY  (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)))) 10 10 "black")
    (cond
@@ -175,15 +175,25 @@
         (moveX (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_data) 0) time)
         (moveY (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) time)
         #t
+        n_player
         )2))
-    ((integer? (/ time 10)) (drawPlayer
+    ((and
+     (equal? (get (get p_data 2) 12) n_player)
+     (not (collide 20 20
+     (moveX (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_data) 0) time)
+     (moveY (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) time)
+     (getXB (get (get p_data 2) 9) (get (get p_data 2) 0) (get (get p_data 2) 2) (get (get p_data 2) 5))
+     (getFB (get (get p_data 2) 9) (get (get p_data 2) 10) (get (get p_data 2) 0) (get (get p_data 2) 1) (get (get p_data 2) 2) (get (get p_data 2) 6)))))
+     (replace p_data (replace (replace (get p_data 2) #f 11) -1 12) 2)
+     )
+    ((integer? (/ time 1)) (drawPlayer
      (get (getPlayer n p t p_old_data) 0)
      (get (getPlayer n p t p_old_data) 1)
      (get (getPlayer n p t p_data) 0)
      (get (getPlayer n p t p_data) 1)
      t
      n_player
-     time) (updatePlayers (+ n_player 1) (+ n 1) p t p_old_data (replace p_data (replace (get p_data 2) #f 11) 2) abs_time time))
+     time) (updatePlayers (+ n_player 1) (+ n 1) p t p_old_data p_data abs_time time))
     (else time)
 ))
 ;Updates every movement. This function returns the time when the movement of every element is finished
@@ -225,7 +235,7 @@
 ;Replace gameData. Depuracion <---------------------------
 (define (WCR2018 F1 F2 g)
   (drawField)
-  (repaint F1 F2 (gameData F1 F2 '(400 180 1 1 1 0 0 0 0 395 170 #f)) (gameData F1 F2 '(400 180 1 1 1 0 0 0 0 395 170 #f)) 0 0 0 g)
+  (repaint F1 F2 (gameData F1 F2 '(400 180 1 1 1 0 0 0 0 395 170 #f -1)) (gameData F1 F2 '(400 180 1 1 1 0 0 0 0 395 170 #f -1)) 0 0 0 g)
 )
 ;--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -261,6 +271,7 @@
                                                  (else (route_aux x y l final_x final_y type (+ player 1)))
                                                  )
 )
+
 ;;Function that controls if one of the two teams win so the game will end.
 ;;------------------------------------------------------------------------------------------------------------------------------------------
 (define(end_game c1 c2)(
