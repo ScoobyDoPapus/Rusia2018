@@ -17,8 +17,8 @@
 ;--------------------------------------------------------------------------------------------------------------------------------------------
 ;Drawing fuctions
 ;--------------------------------------------------------------------------------------------------------------------------------------------
-  ;Draw the soccer field.
-  (define (drawField) 
+;Draw the soccer field.
+(define (drawField) 
   ;;Main Window
   ((draw-solid-rectangle window) (make-posn 0 0) 1200 512 "black")
   ;;Soccer field background
@@ -40,7 +40,7 @@
   ;;Score label
   ((draw-string window)(make-posn 950 120) "HOME" "white")
   ((draw-string window)(make-posn 1100 120) "VISITORS" "white")  
-  )
+)
 ;;Fuction that draws the score from the two teams
 (define (drawCounter home visitors)
 ((draw-solid-rectangle window) (make-posn 1130 135) 20 20 "white")
@@ -64,15 +64,15 @@
    (cond
       ((and
        (> (+ (getXB (get b_data 9) (get b_data 0) (get b_data 2) (get b_data 5)) 10) 795)
-       (> (+ (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 10) 130)
-       (< (+ (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 10) 250))
+       (> (+ (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 10) 100)
+       (< (+ (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 10) 300))
        (drawCounter (+ (get b_data 7) 1) (get b_data 8))
        (replace (replace (replace b_data (* -1 (get b_data 3)) 3) (+ (get b_data 5) (* -1 (get b_data 3))) 5) (+ (get b_data 7) 1) 7)
      )
      ((and
        (< (getXB (get b_data 9) (get b_data 0) (get b_data 2) (get b_data 5)) 0)
-       (> (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 130)
-       (< (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 250))
+       (> (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 100)
+       (< (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 300))
        (drawCounter  (get b_data 7)(+ (get b_data 8) 1))
        (replace (replace (replace b_data (* -1 (get b_data 3)) 3) (+ (get b_data 5) (* -1 (get b_data 3))) 5) (+ (get b_data 8) 1) 8)
      )
@@ -92,11 +92,17 @@
 (define (displayTimeInSeconds x y t)
   (cond
     ((integer? (* t (/ 1 60)))
-    ((draw-solid-rectangle window) (make-posn x y) 100 20 "white")
+    ((draw-solid-rectangle window) (make-posn x y) 90 20 "white")
     ((draw-string window) (make-posn (+ x 0) (+ y 15)) "Time:" "black")
     ((draw-string window) (make-posn (+ x 50) (+ y 15))
     (number->string (* t (/ 1 60))) "black"))
 ))
+(define (displayGenerations x y g)
+  ((draw-solid-rectangle window) (make-posn x y) 135 20 "white")
+  ((draw-string window) (make-posn (+ x 0) (+ y 15)) "Generation:" "black")
+  ((draw-string window) (make-posn (+ x 105) (+ y 15))
+  (number->string g) "black")
+)
 ;--------------------------------------------------------------------------------------------------------------------------------------------
 ;Mathematical and directional functions
 ;--------------------------------------------------------------------------------------------------------------------------------------------
@@ -148,12 +154,11 @@
     ((equal? t 2) time)
     ((equal? p 4) (updatePlayers n_player 0 0 (+ t 1) p_old_data p_data abs_time time))
     ((equal? n (length (getPosition p t p_data))) (updatePlayers n_player 0 (+ p 1) t p_old_data p_data abs_time time))
-    ((and (collide 20 20
+    ((and (collide 8 5
      (moveX (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_data) 0) time)
      (moveY (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) time)
      (getXB (get (get p_data 2) 9) (get (get p_data 2) 0) (get (get p_data 2) 2) (get (get p_data 2) 5))
      (getFB (get (get p_data 2) 9) (get (get p_data 2) 10) (get (get p_data 2) 0) (get (get p_data 2) 1) (get (get p_data 2) 2) (get (get p_data 2) 6))) (not (get (get p_data 2) 11)))
-     
         (replace p_data (list
         (get (route
          (moveX (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_data) 0) time)
@@ -202,7 +207,7 @@
 (define (update p_old_data p_data t_abs t)
   (sleep (/ 1 60))
   (drawCounter (get (get p_data 2) 7) (get (get p_data 2) 8))
-  (displayTimeInSeconds 1000 60 t_abs)
+  (displayTimeInSeconds 950 60 t_abs)
   (cond
     ((stop? 0 0 0 p_old_data p_data t) p_data)
     ((list? (updatePlayers 1 0 0 0 p_old_data p_data t_abs t)) (update p_old_data (updatePlayers 1 0 0 0 p_old_data p_data t_abs t) (+ t_abs 1) (+ t 1)))
@@ -224,10 +229,25 @@
   (drawField)
   (sleep (/ 1 60))
   (drawCounter (get (get p_data 2) 7) (get (get p_data 2) 8))
-  (displayTimeInSeconds 1000 60 t_abs)
-  (cond 
-    ((< gi gf) (display gi) (newline) (repaint F1 F2 p_data (update p_data (gameData F1 F2 (get p_data 2)) t_abs t) 0 0 (+ gi 1) gf))
-    (else "Game over")
+  (displayTimeInSeconds 950 60 t_abs)
+  (displayGenerations 1040 60 gi)
+  (cond
+    ((and (end_game (get (get p_data 2) 7) (get (get p_data 2) 8)) (< (get (get p_data 2) 7) (get (get p_data 2) 8)))
+     ((draw-string window) (make-posn (getRPX 195) (getRPY 195)) "GAME IS NOT OVER! Visitors wons, for now." "blue"))
+    ((and (end_game (get (get p_data 2) 7) (get (get p_data 2) 8)) (> (get (get p_data 2) 7) (get (get p_data 2) 8)))
+     ((draw-string window) (make-posn (getRPX 195) (getRPY 195)) "GAME IS NOT OVER! Home wons, for now." "red"))
+    ((< gi gf)
+     (drawCounter (get (get p_data 2) 7) (get (get p_data 2) 8))
+     (repaint F1 F2 p_data (update p_data (gameData F1 F2 (get p_data 2)) t_abs t) 0 0 (+ gi 1) gf))
+    (else
+     (cond
+      ((< (get (get p_data 2) 7) (get (get p_data 2) 8))
+      ((draw-string window) (make-posn (getRPX 195) (getRPY 195)) "GAME IS NOT OVER! Visitors wons, for now." "blue"))
+      ((> (get (get p_data 2) 7) (get (get p_data 2) 8))
+      ((draw-string window) (make-posn (getRPX 195) (getRPY 195)) "GAME IS NOT OVER! Home wons, for now." "red"))
+      (else ((draw-string window) (make-posn (getRPX 195) (getRPY 195)) "Draw :(. Put a higher number of generations." "white"))
+     )
+    )
   )
 ) 
 ;--------------------------------------------------------------------------------------------------------
@@ -281,12 +301,13 @@
 
 ;;Function that controls if one of the two teams win so the game will end.
 ;;------------------------------------------------------------------------------------------------------------------------------------------
-(define(end_game c1 c2)(
-                        cond((or (equal? c1 3) (equal? c2 3))
-                             ((clear-viewport window))
-                             (drawField))
-                            (else "Game is not over"))
-)
+;;Function that controls if one of the two teams win so the game will end.
+;;------------------------------------------------------------------------------------------------------------------------------------------
+(define(end_game c1 c2)
+  (cond
+    ((or (equal? c1 3) (equal? c2 3)) #t)
+    (else #f)
+))
 ;--------------------------------------------------------------------------------------------------------------------------------------------
 ;Function that calculates the distance between two points.
 (define (distanceBetweenPoints x1 y1 x2 y2)
@@ -304,4 +325,4 @@
 (define (collide pPr pBr x1 y1 x2 y2)
   (> (+ pPr pBr) (distanceBetweenPoints x1 y1 x2 y2)))
 ;Depuration
-(WCR2018 '(1 1 1) '(1 0 0) 100)
+(WCR2018 '(1 0 0) '(1 0 0) 100)
