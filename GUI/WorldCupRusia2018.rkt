@@ -1,6 +1,5 @@
 ;RPX=Relative position X
 #lang racket
-
 (require (lib "graphics.ss" "graphics"))(open-graphics)
 (define window (open-viewport "WCR2018" 1200 512))
 
@@ -25,7 +24,7 @@
   ((draw-solid-rectangle window) (make-posn 100 50) 800 400 "white")
   ;;Soccer field
   ((draw-solid-rectangle window) (make-posn 102 52) 795 395 "darkgreen")
-  ;;little rectangle
+  ;;little rectangleGeneticAlgorithm
   ((draw-rectangle window) (make-posn (+ 70 32) (+ 156 20)) 30 150 "white")
   ((draw-rectangle window) (make-posn (+ 163 704) (+ 178 -3)) 30 150 "white")
   ;;big rectangle
@@ -224,7 +223,6 @@
     (else (stop? (+ n 1) p t ogd gd time))
 ))
 ;Main program loop. Here occurs all game updates. Involves a time parameter to update all the methods.
-;Replace gameData per Genetic Algorithm. DEPURATION <---------------------------
 (define (repaint F1 F2 p_old_data p_data t_abs t gi gf)
   (drawField)
   (sleep (/ 1 60))
@@ -238,7 +236,7 @@
      ((draw-string window) (make-posn (getRPX 195) (getRPY 195)) "GAME IS NOT OVER! Home wons, for now." "red"))
     ((< gi gf)
      (drawCounter (get (get p_data 2) 7) (get (get p_data 2) 8))
-     (repaint F1 F2 p_data (update p_data (gameData F1 F2 (get p_data 2)) t_abs t) 0 0 (+ gi 1) gf))
+     (repaint F1 F2 p_data (update p_data (EvolucionarEquipos p_data) t_abs t) 0 0 (+ gi 1) gf))
     (else
      (cond
       ((< (get (get p_data 2) 7) (get (get p_data 2) 8))
@@ -254,7 +252,6 @@
 ;Main function
 ;--------------------------------------------------------------------------------------------------------
 ;This is the main function. For running the program, invoke it.
-;Replace gameData. Depuracion <---------------------------
 (define (WCR2018 F1 F2 g)
   (drawField)
   (repaint F1 F2 (gameData F1 F2 '(400 180 1 1 1 0 0 0 0 395 170 #f -1)) (gameData F1 F2 '(400 180 1 1 1 0 0 0 0 395 170 #f -1)) 0 0 0 g)
@@ -324,5 +321,449 @@
 ;--------------------------------------------------------------------------------------------------------
 (define (collide pPr pBr x1 y1 x2 y2)
   (> (+ pPr pBr) (distanceBetweenPoints x1 y1 x2 y2)))
+;--------------------------------------------------------------------------------------------------------------------------------------------
+;Genetic Algorithm
+;--------------------------------------------------------------------------------------------------------------------------------------------
+(define largoCromosoma 3)
+(define tasaMutacion 30)
+(define lista (list 1 2 3 4 5))
+(define pobb '((0 1 1 1 1 1 1 0 0) (0 1 1 1 1 0 1 0 0) (0 1 1 1 1 0 1 0 0) (0 0 1 0 0 0 1 1 1) (0 0 0 1 1 0 0 0 0) (0 0 0 1 1 0 0 0 0) (0 0 1 0 1 0 0 0 1)))
+(define forma '(
+                ((1 1 1 0 1 0 1 1 0) (1 0 1 0 0 1 0 1 0) (1 1 1 0 1 0 1 1 1) (0 0 0 0 1 0 0 0 1))
+                ((1 1 0 1 1 0 1 0 0) (0 1 0 1 0 1 0 1 0) (0 1 1 0 1 1 0 1 0) (1 0 0 1 1 0 1 1 0))
+                ((1 1 1 1 1 1 1 0 0) (1 0 0 1 1 1 0 1 1) (1 0 0 1 1 1 0 1 0))
+                ((1 1 1 1 1 1 1 0 1))
+                )
+  )
+(define poss '((1 2) (3 4) (5 3) (7 5) (7 4) (2 4) (15 4) (13 4) (12 4) (3 4) (9 4) (9 4)))
+(define equipos '((
+                   ((18.0 75.0 3.0 2.0 6.0) (18.0 75.0 3.0 2.0 7))
+                   ((536.0 257.0 1.0 5.0 0.0) (336.0 257.0 4 5.0 0.0) (536.0 257.0 1.0 5.0 0.0))
+                   ((392.0 125.0 0.0 9.0 3.0) (536.0 257.0 1.0 5.0 1))
+                   ((52.0 108.0 3.0 5.0 4.0))
+                                             )
+                  (((453.0 196.0 3.0 1.0 2.0)) ((330.0 198.0 3.0 8.0 1.0)) ((526.0 167.0 8.0 5.0 5.0)) ((490.0 114.0 0.0 1.0 5.0)))
+  (0 50 0 1 1))
+)
+(define largoCancha 700)
+;795*395
+(define (convertirFormacionApoblacion lst)
+  (append (car forma) (car (cdr forma)) (car (cdr (cdr forma))))
+  )
+(define (generarJugador lst largo)
+  (cond
+    ((equal? (length lst) largo) lst)
+    ;(print lst)
+    (else (generarJugador (append (list (random 2)) lst) largo))
+    )
+  )
+(define (generarJugadores listaJugadores largoPob largoGenes)
+  (cond
+    ((equal? (length listaJugadores) (+ largoPob 1)) (cdr listaJugadores))
+    
+    (else (generarJugadores (append listaJugadores (list (generarJugador '() largoGenes))) largoPob largoGenes))
+    )
+  )
+
+;Funcion Inicio Poblacion
+;Args numeroDePoblacion y Largo de los genes 
+(define (poblacionInicial numeroPob largoGenes)
+  (generarJugadores '(()) numeroPob largoGenes)
+  )
+;Funcion cuenta los coindicencias de 1 en los genes
+;convierte array de bits en cromosomas
+;salida: '(velocidad,fuerza,posicion)
+(define (atributosJugador lstJ index vel fuer pos)
+  (cond
+    ((equal? '() lstJ) (list vel fuer pos))
+    ((and (esUno (car lstJ)) (< index (* largoCromosoma 1))) (atributosJugador (cdr lstJ)(+ index 1) (+ vel 1) fuer pos))
+    ((and (esUno (car lstJ)) (< index (* largoCromosoma 2))) (atributosJugador (cdr lstJ)(+ index 1) vel (+ fuer 1) pos))
+    ((and (esUno (car lstJ)) (< index (* largoCromosoma 3))) (atributosJugador (cdr lstJ)(+ index 1) vel fuer (+ pos 1)))
+    
+    ((atributosJugador (cdr lstJ)(+ index 1) vel fuer pos))
+    )
+  )
+;Interfaz Pedir Atributos
+(define (atributosJugsInter lstJ)
+  (atributosJugador lstJ 0 0 0 0)
+  )
+;Funcion de Fitness a los jugadores
+(define (fitnessJugador lst)
+  (apply + (atributosJugador lst 0 0 0 0))
+  )
+;Funcion de Fitnes para poblacion 
+(define (fitnesJugadores pob)
+  (sorter pob)
+  )
+;Selecciona los mejores individuos
+;Input:lista de individuos ordenada
+;Output: lista de 12 mejores individuos 
+(define (seleccion pobJugadores)
+  (take pobJugadores 99)
+  )
+;Este metodo de cruce es basado en un punto de cruze dice de manera random que x cromosomas son del papa y z de la mamá
+(define (cruzarIndividuos jugA jugB i)
+  (append (take jugA i) (drop jugB i))
+  )
+;Cruza a los mejores jugadores de la poblacion
+(define (cruzarPoblacion pob lstP)
+  (cond
+    ((= (length pob) 1) lstP)
+    (else (cruzarPoblacion (cdr pob) (append
+                                (list (cruzarIndividuos (car pob) (car(cdr pob)) (random (* largoCromosoma 3)))) lstP) 
+                                       ))
+          )
+    )
+;Interfaz para cruzar toda la poblacion tiene que venir seleccionados y ordenados para cruzarlos
+(define (cruce pob)
+  (cruzarPoblacion pob '())
+  )
+;Mutacion de un jugador
+(define (mutacionJug jug)
+  (cond
+   ((< (random 100) tasaMutacion) (changeNumber (changeNumber jug (random (length jug))) (random (length jug))))
+   (else jug)
+   )
+ )
+;Se seleccionan mimbros random de la poblacion y se les aplica una mutacion
+(define (mutacionPob pob)
+  (map mutacionJug pob)
+    )
+
+(define (GAlgorithm)
+  (mutacionPob (cruce (seleccion (fitnesJugadores (poblacionInicial 15 9)))))
+  )
+;(poblacionInicial 100 9) poner de nuevo
+(define (Evolucion jugViejos nGen posBola)
+  (mutacionPob (cruce (seleccion (fitnesJugadores (append (convertirFormacionApoblacion jugViejos) (poblacionInicial 100 9))))))
+  ;(clasificadorInter (Evolucion pobb 30 poss) poss (list-ref (darFormacion jugViejos) 0) (list-ref (darFormacion jugViejos) 1) (list-ref (darFormacion jugViejos) 2))
+  )
+;Interfaz de Evolucion con formacion me lo devuelve con formacion 
+(define (Evolucionar jugV nGen posBola)
+  (clasificadorInter (Evolucion jugV nGen posBola) (list-ref (convertirNaBPob jugV '() '()) 1) (list-ref (darFormacion jugV) 0) (list-ref (darFormacion jugV) 1) (list-ref (darFormacion jugV) 2))
+)
+(define (EvolucionarEquipos equipos)
+  (append (list (Evolucionar (getTeam 0 equipos) 30 (getTeam 2 equipos))) (list (Evolucionar (getTeam 1 equipos) 30 (getTeam 2 equipos))) (list (getTeam 2 equipos)))
+)
+(define (encontrarJug lst pos)
+  (cond
+    ((equal? (car (cdr (atributosPos lst 0 0 0 0))) pos) #t)
+    (else #f)
+  )
+)
+;;;;
+
+;;
+
+;;;;
+(define (atributosPos lstJ index vel fuer pos)
+  (cond
+    ((equal? '() lstJ) (list vel fuer pos))
+    ((and (esUno (car lstJ)) (< index (* largoCromosoma 1))) (atributosPos (cdr lstJ)(+ index 1) (+ vel 1) fuer pos))
+    ((and (esUno (car lstJ)) (< index (* largoCromosoma 2))) (atributosPos (cdr lstJ)(+ index 1) vel (+ fuer 1) pos))
+    ((and (esUno (car lstJ)) (< index (* largoCromosoma 3))) (atributosPos (cdr lstJ)(+ index 1) vel fuer (+ pos 1)))
+    ((atributosPos (cdr lstJ)(+ index 1) vel fuer pos))
+    )
+  )
+
+(define (devolverJugadores lst defensas medios delanteros lstD lstM lstA listP)
+  (cond
+  ((equal? lst '()) (list lstD lstM lstA listP))
+  
+  ((and (equal? (length lstD) defensas) (equal? (length lstM) medios) (equal? (length listP) 1) (equal? (length lstA) delanteros)) (list lstD lstM lstA listP))
+  ((and (< (length lstD) defensas) (encontrarJug (car lst) 1))
+   (display (length lstD))(newline) (devolverJugadores (cdr lst) defensas medios delanteros (append (list (car lst)) lstD) lstM lstA listP))
+
+  ((and (< (length lstM) medios) (encontrarJug (car lst) 2))
+   (display (length lstD))(newline) (devolverJugadores (cdr lst) defensas medios delanteros lstD (append (list (car lst)) lstM) lstA listP))
+
+  ((and (< (length lstA) delanteros) (encontrarJug (car lst) 3))
+   (display (length lstD))(newline) (devolverJugadores (cdr lst) defensas medios delanteros lstD lstM (append (list (car lst)) lstA) listP))
+
+  ((and (< (length listP) 1) (encontrarJug (car lst) 0))
+   (display (length lstD))(newline) (devolverJugadores (cdr lst) defensas medios delanteros lstD lstM lstA (append (list (car lst)) listP)))
+  
+  ;(display (length lstD))
+  (else (devolverJugadores (cdr lst) defensas medios delanteros lstD lstM lstA listP))
+  )
+ )
+;Interfaz para pedir la formacion 
+(define (devolverFormacion lst defensas medio delanteros)
+  (devolverJugadores lst defensas medio delanteros '() '() '() '())
+  )
+
+
+;(< (random 100) tasaMutacion)
+
+;Sirve para ver si es 1 o 0 en el array de bits
+(define (esUno numero)
+  (cond
+  ((= numero 1) #t)
+  (else #f)
+  )
+)
+
+(define (changeNumber lst i)
+  (append (take lst i) (list (random 2)) (drop lst (+ i 1)))
+  )
+
+(define (part lst i)
+  (list (take lst i)
+        (drop lst i)))
+
+;Codigo Modificado de Rnso oct 16 StackOverflow https://stackoverflow.com/questions/40050677/is-there-a-way-to-sort-a-list-of-lists-using-an-index
+(define (sorter ll)
+  (sort ll
+        (lambda(a b)
+          (if (>  (fitnessJugador a) (fitnessJugador b))
+              #t #f))))
+
+;;;;Funciones de Posicion
+(define (actualizarPos lst i x)
+  (append (take lst i) (list x) (drop lst (+ i 1)))
+  )
+(define (InterfazPos lstPos posBola index)
+  1
+  )
+(define (elMasCerca lst posBola menor)
+  (cond
+    ((equal? lst '()) menor)
+    ((< (restaEntrepares (car lst) posBola) (restaEntrepares menor posBola)) (display menor)(elMasCerca (cdr lst) posBola (car lst)))
+    (else (elMasCerca (cdr lst) posBola menor))
+    )
+  )
+;Funcion que devuelve pos Actualizada
+(define (devolverPos lst posb)
+  (actualizarPos lst (finLi poss (elMasCerca lst posb '(1000000 100000)) 0) (sumarPar (elMasCerca lst posb '(1000000 100000)) 20))
+  )
+; (2,3,7) and (300,200)
+(define (combinarConPosEquip lst lstPos)
+  (append (list (car lstPos) (car (cdr lstPos)) (car lst)) (cdr (cdr lst)) '(3))
+  )
+;;;;;
+;KADJLFIHOÑODSIF
+
+;;;;;
+(define (combinarJugs jugs pos)
+  (map combinarConPosEquip jugs pos)
+  )
+;(atributosJugsInter lstJ)
+;Input:Equipo
+;Output :Lista ya armada con la formacion
+(define (clasificador lst pos defensas medios delanteros lstD lstM lstA listP)
+(cond
+  ((equal? lst '()) (list lstD lstM lstM listP))
+  
+  ((and (equal? (length lstD) defensas) (equal? (length lstM) medios) (equal? (length listP) 1) (equal? (length lstA) delanteros))
+   (list lstD lstM lstA listP))
+  ((and (< (length lstD) defensas) (encontrarJug (car lst) 1))
+   (display (length lstD))(newline) (clasificador (cdr lst) (cdr pos) defensas medios delanteros (append (list (combinarConPosEquip (atributosJugsInter (car lst)) (car pos))) lstD) lstM lstA listP))
+
+  ((and (< (length lstM) medios) (encontrarJug (car lst) 2))
+   (clasificador (cdr lst) (cdr pos) defensas medios delanteros lstD (append (list (combinarConPosEquip (atributosJugsInter (car lst)) (car pos))) lstM) lstA listP))
+
+  ((and (< (length lstA) delanteros) (encontrarJug (car lst) 3))
+   (clasificador (cdr lst) (cdr pos) defensas medios delanteros lstD lstM (append (list (combinarConPosEquip (atributosJugsInter (car lst)) (car pos))) lstA) listP))
+
+  ((and (< (length listP) 1) (encontrarJug (car lst) 0))
+   (clasificador (cdr lst) (cdr pos) defensas medios delanteros lstD lstM lstA (append (list (combinarConPosEquip (atributosJugsInter (car lst)) (car pos))) listP)))
+  
+  ;(display (length lstD))
+  (else (clasificador (cdr lst) pos defensas medios delanteros lstD lstM lstA listP))
+  )
+;3400
+  )
+;Interfaz para pasar de array de bits sin formacion a numeron con formacion 
+(define (clasificadorInter lst pos def med del)
+  (clasificador lst pos def med del '() '() '() '())
+  )
+;;;
+
+;Input :Un jugador
+;;;;;Output:Array de bits
+(define (cAbts lst)
+  (append (hacerunUno (list-ref lst 2) largoCromosoma '()) (hacerunUno (clasificadorPosXY (take lst 2)) largoCromosoma '()) (hacerunUno (list-ref lst 2) largoCromosoma '()))
+  )
+;Input una poblacion en numeros
+;Output una poblacion en bits y lst pos en XY
+(define (convertirNaBPob lst lstJugs lstPos)
+  (cond
+    ((equal? lst '(() () () ())) (list lstJugs lstPos))
+    ((> (length (car lst)) 0)
+     (convertirNaBPob (cons (remove (car (car lst)) (car lst)) (cdr lst)) (append (list (cAbts (car (car lst)))) lstJugs) (cPosaXY (car (car lst)) lstPos))
+     )
+    ((> (length (car (cdr lst))) 0)
+     (convertirNaBPob (append (cons '() (list (remove (car (car (cdr lst))) (car (cdr lst))))) (cdr (cdr lst))) (append (list (cAbts (car (car (cdr lst))))) lstJugs) (cPosaXY (car (car (cdr lst))) lstPos))
+     )
+    ((> (length (list-ref lst 2)) 0)
+     (convertirNaBPob (append (cons '() (cons '() (list (remove (car (car (cdr (cdr lst)))) (car (cdr (cdr lst))))))) (cdr (cdr (cdr lst)))) (append (list (cAbts (car (car (cdr (cdr lst)))))) lstJugs) (cPosaXY (car (car (cdr (cdr lst)))) lstPos))
+     )
+    (
+     (convertirNaBPob '(() () () ()) (append (list (cAbts (car (list-ref lst 3)))) lstJugs) (cPosaXY (car (list-ref lst 3)) lstPos))
+     )    
+    )
+  )
+
+(define (cPosaXY pos lstP)
+  (cons (take pos 2) lstP)
+  )
+;
+;Aca quede
+; 
+;Interfaz para convertir Numeros pob a Bits pob
+(define (convNaB lst)
+  1
+  )
+(define (clasificadorPosXY pos)
+  (cond
+    ((< (car pos) (/ largoCancha 7)) 0)
+    ((< (car pos) (/ largoCancha 3)) 1)
+    ((< (car pos) (/ largoCancha 2)) 2)
+
+    ((< (car pos) (/ largoCancha 1)) 3)
+    
+    )
+  )
+(define (hacerunUno cont largoCrom lst)
+  (cond
+    ;crom-cont= 
+    ((equal? (+ (- largoCrom (exact-round cont)) (exact-round cont)) (length lst)) lst)
+    ((< (length lst) (exact-round cont))
+     (hacerunUno (exact-round cont) largoCrom (cons 1 lst))
+     )
+    (else
+     (hacerunUno (exact-round cont) largoCrom (cons 0 lst))
+     )
+    )
+  )
+;Output me devuelve si es 4 4 2
+(define (darFormacion lst)
+  (list (length (car lst)) (length (car (cdr lst))) (length (car (cdr (cdr lst)))))
+  
+  )
+(define (combinarJugsPosAtri jugs pos)
+  (combinarJugs (map atributosJugsInter jugs) pos)
+  )
+
+(define (combJugsFormacion jugs pos)
+  1
+  )
+;;;
+(define (restaEntrepares pos1 pos2)
+  (abs (- (apply + pos1) (apply + pos2)))
+  )
+(define (finLi lst busq index)
+  (cond
+    ((equal? lst '()) '())
+    ((equal? (car lst) busq) index)
+    (else (finLi (cdr lst) busq (+ index 1)))
+    )
+  )
+(define (sumarPar lst suma)
+  (list (+ (car lst) suma) (+ (car (cdr lst)) suma))
+  )
+
+(define prueba '((0 1 1 0 1 1 0 1 0)
+  (1 0 1 0 1 1 1 0 0)
+  (1 1 0 1 0 1 0 1 0)
+  (1 0 1 1 0 0 1 1 1)
+  (1 1 1 0 0 0 0 1 0)
+  (0 1 1 0 0 1 1 0 1)
+  (1 1 1 0 0 0 1 0 1)
+  (0 0 1 0 1 0 0 1 0)
+  (1 0 0 1 1 1 1 0 1)
+  (1 0 1 0 0 0 0 1 0)
+  (1 0 0 0 0 1 1 1 1)
+  (0 1 0 0 0 0 0 1 1)
+  (0 1 0 1 1 0 0 0 0)
+  (0 1 1 1 1 1 0 1 1)
+  (1 0 0 0 0 0 0 0 1)
+  (1 0 1 0 1 1 0 0 0)
+  (1 1 1 0 1 0 1 0 0)
+  (0 0 1 0 1 0 0 0 0)
+  (0 1 0 1 0 0 0 1 1)
+  (1 0 1 1 0 1 1 0 1)
+  (0 1 1 1 1 0 1 1 0)
+  (1 1 0 0 1 0 0 1 1)
+  (0 1 0 0 0 1 0 0 0)
+  (1 0 0 1 1 0 1 1 1)
+  (1 0 0 0 0 1 1 1 0)
+  (0 0 0 1 0 0 1 1 1)
+  (1 1 1 0 1 1 0 1 0)
+  (1 0 1 1 0 0 1 1 1)
+  (1 1 0 1 1 1 1 0 0)
+  (0 0 0 1 0 0 0 1 1)
+  (0 0 1 1 0 1 0 0 1)
+  (1 1 0 0 1 0 0 1 1)
+  (1 0 0 1 0 1 0 0 1)
+  (0 1 1 1 0 0 0 1 1)
+  (0 1 0 1 1 1 0 0 1)
+  (1 0 0 0 0 0 0 0 0)
+  (1 0 1 0 1 0 1 1 0)
+  (0 1 0 1 1 1 1 0 0)
+  (1 1 1 1 0 1 1 1 0)
+  (1 0 0 0 1 1 1 1 1)
+  (0 1 1 1 0 0 1 0 0)
+  (1 0 1 0 1 1 1 1 0)
+  (1 0 0 1 0 0 0 1 0)
+  (0 0 1 1 1 0 1 0 1)
+  (1 0 1 1 0 1 1 0 1)
+  (0 0 1 1 1 0 0 1 0)
+  (1 1 1 0 1 0 0 0 0)
+  (1 0 0 1 0 1 0 0 1)
+  (0 0 0 1 0 0 1 1 1)
+  (1 0 0 0 1 1 0 0 1)
+  (1 0 1 1 1 0 1 1 1)
+  (1 1 0 0 1 0 0 1 1)
+  (0 0 1 1 0 0 0 0 0)
+  (1 0 0 0 1 0 0 0 1)
+  (0 1 0 1 0 0 0 0 0)
+  (0 0 0 1 1 0 1 1 1)
+  (0 0 1 1 0 1 1 0 0)
+  (1 1 1 0 1 0 1 0 1)
+  (1 1 1 0 1 0 0 0 0)
+  (0 0 0 0 1 1 1 1 0)
+  (0 1 1 1 0 0 0 0 1)
+  (0 0 1 1 0 0 0 1 1)
+  (1 1 0 0 1 0 1 1 1)
+  (0 0 1 1 0 0 0 0 0)
+  (0 1 1 1 1 0 0 0 1)
+  (0 1 1 1 1 1 0 1 1)
+  (0 1 1 1 1 1 1 1 0)
+  (1 1 0 0 0 0 0 0 0)
+  (0 1 0 0 1 1 0 0 1)
+  (0 0 1 1 0 1 0 0 1)
+  (0 1 0 0 1 0 0 1 1)
+  (1 0 0 1 0 0 0 1 0)
+  (0 0 1 0 1 0 0 0 0)
+  (0 1 1 0 0 0 1 1 1)
+  (0 0 1 1 1 1 0 1 0)
+  (1 1 0 1 1 0 0 1 1)
+  (0 0 0 1 0 0 1 0 1)
+  (1 0 0 1 0 0 0 1 0)
+  (0 0 1 0 1 1 0 1 0)
+  (0 0 1 0 1 1 0 0 0)
+  (1 0 1 0 0 1 1 1 0)
+  (1 1 1 0 1 1 0 1 0)
+  (1 1 0 1 0 0 1 0 1)
+  (1 1 0 1 0 1 1 0 1)
+  (1 0 0 0 1 1 1 0 1)
+  (0 0 1 1 0 1 1 1 1)
+  (0 0 0 0 1 0 1 1 1)
+  (1 1 0 1 1 1 0 1 0)
+  (0 0 0 1 0 1 1 1 1)
+  (0 0 0 0 0 1 1 1 1)
+  (0 1 0 0 1 1 0 0 0)
+  (0 0 0 0 1 0 0 0 1)
+  (1 0 1 1 0 1 0 0 0)
+  (0 1 0 1 0 0 1 0 1)
+  (1 1 1 0 0 0 1 0 1)
+  (1 0 1 0 0 1 0 0 1)
+  (0 1 1 0 0 1 0 1 1)
+  (1 0 0 1 0 0 1 1 1)
+  (0 0 0 1 0 1 1 0 0)
+  (1 1 0 0 0 1 0 0 1)))
+
+
 ;Depuration
-(WCR2018 '(1 0 0) '(1 0 0) 100)
+(WCR2018 '(1 1 1) '(1 1 1) 100)
