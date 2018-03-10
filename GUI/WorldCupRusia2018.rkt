@@ -64,15 +64,15 @@
    (cond
       ((and
        (> (+ (getXB (get b_data 9) (get b_data 0) (get b_data 2) (get b_data 5)) 10) 795)
-       (> (+ (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 10) 100)
-       (< (+ (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 10) 300))
+       (> (+ (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 10) 130)
+       (< (+ (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 10) 250))
        (drawCounter (+ (get b_data 7) 1) (get b_data 8))
        (replace (replace (replace b_data (* -1 (get b_data 3)) 3) (+ (get b_data 5) (* -1 (get b_data 3))) 5) (+ (get b_data 7) 1) 7)
      )
      ((and
        (< (getXB (get b_data 9) (get b_data 0) (get b_data 2) (get b_data 5)) 0)
-       (> (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 100)
-       (< (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 300))
+       (> (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 130)
+       (< (getFB (get b_data 9) (get b_data 10) (get b_data 0) (get b_data 1) (get b_data 2) (get b_data 6)) 250))
        (drawCounter  (get b_data 7)(+ (get b_data 8) 1))
        (replace (replace (replace b_data (* -1 (get b_data 3)) 3) (+ (get b_data 5) (* -1 (get b_data 3))) 5) (+ (get b_data 8) 1) 8)
      )
@@ -153,17 +153,19 @@
      (moveY (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) time)
      (getXB (get (get p_data 2) 9) (get (get p_data 2) 0) (get (get p_data 2) 2) (get (get p_data 2) 5))
      (getFB (get (get p_data 2) 9) (get (get p_data 2) 10) (get (get p_data 2) 0) (get (get p_data 2) 1) (get (get p_data 2) 2) (get (get p_data 2) 6))) (not (get (get p_data 2) 11)))
-     (display "si sale y no chocó se mamut") (newline)
+     
         (replace p_data (list
         (get (route
          (moveX (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_data) 0) time)
          (moveY (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) time)
          (getTeam t p_data)
+         t
         )0)
         (get (route
          (moveX (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_data) 0) time)
          (moveY (get (getPlayer n p t p_old_data) 0) (get (getPlayer n p t p_old_data) 1) (get (getPlayer n p t p_data) 0) (get (getPlayer n p t p_data) 1) time)
          (getTeam t p_data)
+         t
         )1)
         (get (get p_data 2) 2)
         (get (get p_data 2) 3)
@@ -239,36 +241,41 @@
 )
 ;--------------------------------------------------------------------------------------------------------------------------------------------
 
-(define (route pos_X pos_Y players_List)(
+(define (route pos_X pos_Y players_List t)(
                                          cond(
                                              (null? players_List) 0)
-                                             (else (route_aux pos_X pos_Y players_List 2000 2000 0 0))
+                                             (else (route_aux pos_X pos_Y players_List 2000 2000 0 0 t))
                                              )
 )
 ;;Function that looks for the closer player so the player with the ball can throw it to the better way.
 ;-------------------------------------------------------------------------------------------------------------------------------------------
 
-(define (route_aux x y l final_x final_y type player) 
+(define (route_aux x y l final_x final_y type player t) 
   (cond
                                                  ((null? l) (display final_x) (display " ") (display final_y) (newline) (list final_x final_y))
                                                  
                                                  ((and (equal? x (get (get (car l) player) 0)) (equal? y (get (get (car l) player) 1)))
                                                   
-                                                  (route_aux x y l final_x final_y type (+ player 1)))
+                                                  (route_aux x y l final_x final_y type (+ player 1)t))
                                                  
                                                  ((equal? player (length(car l)))
                                                   
-                                                  (route_aux x y (cdr l) final_x final_y (+ type 1) 0 ))
+                                                  (route_aux x y (cdr l) final_x final_y (+ type 1) 0 t))
                                                  
+                                                 ((and(equal? t 0)(<= 650 (get (get (car l) player) 0)))
+                                                  
+                                                  (list final_x final_y))
+
+                                                 ((and(equal? t 1)(<= 650 (get (get (car l) player) 0)))
+                                                  
+                                                  (list final_x final_y))
+                                                  
+                                                   
                                                  ((<= (abs (- x (get (get (car l) player) 0))) final_x)
                                                   
-                                                  (route_aux x y l (get (get (car l) player) 0) (get (get (car l) player) 1) type (+ player 1)))
+                                                  (route_aux x y l (get (get (car l) player) 0) (get (get (car l) player) 1) type (+ player 1) t))
                                                  
-                                                ;; ((<= (abs (- y (get (get (car l) player) 1))) final_y)
-                                                  
-                                                 ;; (route_aux x y l final_x (get (get (car l) player) 1) type (+ player 1)))
-                                                 
-                                                 (else (route_aux x y l final_x final_y type (+ player 1)))
+                                                 (else (route_aux x y l final_x final_y type (+ player 1) t))
                                                  )
 )
 
@@ -297,4 +304,4 @@
 (define (collide pPr pBr x1 y1 x2 y2)
   (> (+ pPr pBr) (distanceBetweenPoints x1 y1 x2 y2)))
 ;Depuration
-(WCR2018 '(1 0 0) '(1 0 0) 100)
+(WCR2018 '(1 1 1) '(1 0 0) 100)
