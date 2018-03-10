@@ -1,15 +1,27 @@
 #lang racket
-
+;(require "GAScheme2.rkt")
 (define largoCromosoma 3)
 (define tasaMutacion 30)
 (define lista (list 1 2 3 4 5))
-(define pobb '((0 1 1 1 1 1 1 0 0) (0 0 1 0 0 0 1 1 1) (0 0 0 1 1 0 0 0 0) (0 0 0 1 1 0 0 0 0) (0 0 1 0 1 0 0 0 1)))
+(define pobb '((0 1 1 1 1 1 1 0 0) (0 1 1 1 1 0 1 0 0) (0 1 1 1 1 0 1 0 0) (0 0 1 0 0 0 1 1 1) (0 0 0 1 1 0 0 0 0) (0 0 0 1 1 0 0 0 0) (0 0 1 0 1 0 0 0 1)))
 (define forma '(
                 ((1 1 1 0 1 0 1 1 0) (1 0 1 0 0 1 0 1 0) (1 1 1 0 1 0 1 1 1) (0 0 0 0 1 0 0 0 1))
                 ((1 1 0 1 1 0 1 0 0) (0 1 0 1 0 1 0 1 0) (0 1 1 0 1 1 0 1 0) (1 0 0 1 1 0 1 1 0))
-                ((1 1 1 1 1 1 1 0 0) (1 0 0 1 1 1 0 1 1))
-                ))
-(define poss '((1 2) (3 4) (5 3) (7 5)))
+                ((1 1 1 1 1 1 1 0 0) (1 0 0 1 1 1 0 1 1) (1 0 0 1 1 1 0 1 0))
+                ((1 1 1 1 1 1 1 0 1))
+                )
+  )
+(define poss '((1 2) (3 4) (5 3) (7 5) (7 4) (2 4) (15 4) (13 4) (12 4) (3 4) (9 4) (9 4)))
+(define equipos '((
+                   ((18.0 75.0 3.0 2.0 6.0) (18.0 75.0 3.0 2.0 7))
+                   ((536.0 257.0 1.0 5.0 0.0) (336.0 257.0 4 5.0 0.0) (536.0 257.0 1.0 5.0 0.0))
+                   ((392.0 125.0 0.0 9.0 3.0) (536.0 257.0 1.0 5.0 1))
+                   ((52.0 108.0 3.0 5.0 4.0))
+                                             )
+                  (((453.0 196.0 3.0 1.0 2.0)) ((330.0 198.0 3.0 8.0 1.0)) ((526.0 167.0 8.0 5.0 5.0)) ((490.0 114.0 0.0 1.0 5.0)))
+  (0 50 0 1 1))
+)
+(define largoCancha 700)
 ;795*395
 (define (convertirFormacionApoblacion lst)
   (append (car forma) (car (cdr forma)) (car (cdr (cdr forma))))
@@ -47,6 +59,10 @@
     
     ((atributosJugador (cdr lstJ)(+ index 1) vel fuer pos))
     )
+  )
+;Interfaz Pedir Atributos
+(define (atributosJugsInter lstJ)
+  (atributosJugador lstJ 0 0 0 0)
   )
 ;Funcion de Fitness a los jugadores
 (define (fitnessJugador lst)
@@ -96,11 +112,13 @@
   )
 ;(poblacionInicial 100 9) poner de nuevo
 (define (Evolucion jugViejos nGen posBola)
-  (mutacionPob (cruce (seleccion (fitnesJugadores (append (convertirFormacionApoblacion jugViejos) (poblacionInicial 100 9))))))
+ ; (mutacionPob (cruce (seleccion (fitnesJugadores (append (convertirFormacionApoblacion jugViejos) (poblacionInicial 100 9))))))
+  (clasificadorInter (Evolucion pobb 30 poss) poss (list-ref (darFormacion jugViejos) 0) (list-ref (darFormacion jugViejos) 1) (list-ref (darFormacion jugViejos) 2))
   )
-;Interfaz de Evolucion con formacion
+;Interfaz de Evolucion con formacion me lo devuelve con formacion 
 (define (Evolucionar jugV nGen posBola)
   (devolverFormacion (Evolucion jugV nGen posBola) 3 3 3)
+  
   )
 (define (encontrarJug lst pos)
   (cond
@@ -193,6 +211,123 @@
 (define (devolverPos lst posb)
   (actualizarPos lst (finLi poss (elMasCerca lst posb '(1000000 100000)) 0) (sumarPar (elMasCerca lst posb '(1000000 100000)) 20))
   )
+; (2,3,7) and (300,200)
+(define (combinarConPosEquip lst lstPos)
+  (append (list (car lstPos) (car (cdr lstPos)) (car lst)) (cdr (cdr lst)) '(3))
+  )
+;;;;;
+;KADJLFIHOÑODSIF
+
+;;;;;
+(define (combinarJugs jugs pos)
+  (map combinarConPosEquip jugs pos)
+  )
+;(atributosJugsInter lstJ)
+;Input:Equipo
+;Output :Lista ya armada con la formacion
+(define (clasificador lst pos defensas medios delanteros lstD lstM lstA listP)
+(cond
+  ((equal? lst '()) (list lstD lstM lstM listP))
+  
+  ((and (equal? (length lstD) defensas) (equal? (length lstM) medios) (equal? (length listP) 1) (equal? (length lstA) delanteros))
+   (list lstD lstM lstA listP))
+  ((and (< (length lstD) defensas) (encontrarJug (car lst) 1))
+   (display (length lstD))(newline) (clasificador (cdr lst) (cdr pos) defensas medios delanteros (append (list (combinarConPosEquip (atributosJugsInter (car lst)) (car pos))) lstD) lstM lstA listP))
+
+  ((and (< (length lstM) medios) (encontrarJug (car lst) 2))
+   (clasificador (cdr lst) (cdr pos) defensas medios delanteros lstD (append (list (combinarConPosEquip (atributosJugsInter (car lst)) (car pos))) lstM) lstA listP))
+
+  ((and (< (length lstA) delanteros) (encontrarJug (car lst) 3))
+   (clasificador (cdr lst) (cdr pos) defensas medios delanteros lstD lstM (append (list (combinarConPosEquip (atributosJugsInter (car lst)) (car pos))) lstA) listP))
+
+  ((and (< (length listP) 1) (encontrarJug (car lst) 0))
+   (clasificador (cdr lst) (cdr pos) defensas medios delanteros lstD lstM lstA (append (list (combinarConPosEquip (atributosJugsInter (car lst)) (car pos))) listP)))
+  
+  ;(display (length lstD))
+  (else (clasificador (cdr lst) pos defensas medios delanteros lstD lstM lstA listP))
+  )
+;3400
+  )
+;Interfaz para pasar de array de bits sin formacion a numeron con formacion 
+(define (clasificadorInter lst pos def med del)
+  (clasificador lst pos def med del '() '() '() '())
+  )
+;;;
+
+;Input :Un jugador
+;;;;;Output:Array de bits
+(define (cAbts lst)
+  (append (hacerunUno (list-ref lst 2) largoCromosoma '()) (hacerunUno (clasificadorPosXY (take lst 2)) largoCromosoma '()) (hacerunUno (list-ref lst 2) largoCromosoma '()))
+  )
+;Input una poblacion en numeros
+;Output una poblacion en bits
+(define (convertirNaBPob lst pos lstJugs lstPos def mid del port)
+  (cond
+    ((equal? lst '(() () () ())) lstJugs)
+    ((> (length (car lst)) 0)
+     (convertirNaBPob (cons (remove (car (car lst)) (car lst)) (cdr lst)) (cdr pos) (append (list (cAbts (car (car lst)))) lstJugs) lstPos (- def 1) mid del port)
+     )
+    ((> (length (car (cdr lst))) 0)
+     (convertirNaBPob (append (cons '() (list (remove (car (car (cdr lst))) (car (cdr lst))))) (cdr (cdr lst))) (cdr pos) (append (list (cAbts (car (car (cdr lst))))) lstJugs) lstPos def (- mid 1) del port)
+     )
+    ((> (length (list-ref lst 2)) 0)
+     (convertirNaBPob (append (cons '() (cons '() (list (remove (car (car (cdr (cdr lst)))) (car (cdr (cdr lst))))))) (cdr (cdr (cdr lst)))) (cdr pos) (append (list (cAbts (car (car (cdr (cdr lst)))))) lstJugs) lstPos def mid (- del 1) port)
+     )
+    (
+     (convertirNaBPob '(() () () ()) (cdr pos) (append (cAbts (car (list-ref lst 3))) lstJugs) lstPos def mid del (- port 1))
+     )
+    
+    )
+  )
+;
+;Aca quede
+; 
+;Interfaz para convertir Numeros pob a Bits pob
+(define (convNaB lst)
+  1
+  )
+
+(define (clasificadorPosXY pos)
+  (cond
+    ((< (car pos) (/ largoCancha 7)) 0)
+    ((< (car pos) (/ largoCancha 3)) 1)
+    ((< (car pos) (/ largoCancha 2)) 2)
+
+    ((< (car pos) (/ largoCancha 1)) 3)
+    
+    )
+  )
+(define (hacerunUno cont largoCrom lst)
+  (cond
+    ;crom-cont= 
+    ((equal? (+ (- largoCrom (exact-round cont)) (exact-round cont)) (length lst)) lst)
+    ((< (length lst) (exact-round cont))
+     (hacerunUno (exact-round cont) largoCrom (cons 1 lst))
+     )
+    (else
+     (hacerunUno (exact-round cont) largoCrom (cons 0 lst))
+     )
+    )
+  )
+;Output me devuelve si es 4 4 2
+(define (darFormacion lst)
+  (list (length (car lst)) (length (car (cdr lst))) (length (car (cdr (cdr lst)))))
+  
+  )
+'(
+                   ((18.0 75.0 3.0 2.0 6.0) (18.0 75.0 3.0 2.0 7))
+                   ((536.0 257.0 1.0 5.0 0.0) (336.0 257.0 4 5.0 0.0) (536.0 257.0 1.0 5.0 0.0))
+                   ((392.0 125.0 0.0 9.0 3.0) (536.0 257.0 1.0 5.0 1))
+                   ((52.0 108.0 3.0 5.0 4.0))
+                                             )
+(define (combinarJugsPosAtri jugs pos)
+  (combinarJugs (map atributosJugsInter jugs) pos)
+  )
+
+(define (combJugsFormacion jugs pos)
+  1
+  )
+;;;
 (define (restaEntrepares pos1 pos2)
   (abs (- (apply + pos1) (apply + pos2)))
   )
